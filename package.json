@@ -1,0 +1,20 @@
+{
+  "name": "stemc-backend",
+  "version": "1.0.0",
+  "description": "The backend engine for the web app implementation of STEM-C (https://docs.google.com/document/d/1_vZcvzVQytRbN1_rq0hu4YjbnEsgQATS-XN_kCxAA10/edit?usp=sharing)",
+  "main": "index.js",
+  "repository": "https://github.com/jji-bigg-stemc/backend.git",
+  "author": "jerry",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "nodemon": "^2.0.19"
+  }
+}
