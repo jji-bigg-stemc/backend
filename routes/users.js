@@ -25,11 +25,11 @@ router.get("/", getFromSheets);
 
 router.post("/login", login);
 
-router.post("/register", registerOnSheets);
+router.post("/register", register, registerOnSheets);
 
-router.put("/update", updateOnSheets);
+router.put("/update", update, updateOnSheets);
 
-router.delete("/delete", deleteFromSheets);
+router.delete("/delete", deleteUser, deleteFromSheets);
 
 const login = async (req, res) => {
   // most likely not using this route, as auth0 will be handling this
@@ -67,6 +67,30 @@ const getFromSheets = async (req, res) => {
   res.send(getRows.data);
 };
 
+const register = async (req, res) => {
+  // perform data cleaning and validation for the posted data
+  const newUser = req.body;
+
+  // check if the user exists in the spreadsheet
+  usermodel.findOne({ email }).then((user) => {
+    if (user) {
+      return res.status(400).json({ email: "Email already exists" });
+    } else {
+      const newUser = new usermodel({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+      });
+
+      // save the user to the database
+      newUser
+        .save()
+        .then((user) => res.json(user))
+        .catch((err) => console.log(err));
+    }
+  });
+};
+
 const registerOnSheets = async (req, res) => {
   // maybe use this after registering from the frontend: Auth0
   // then just update infos here for record keeping
@@ -87,6 +111,28 @@ const registerOnSheets = async (req, res) => {
   });
 };
 
+const update = async (req, res) => {
+  // perform data cleaning and validation for the posted data
+  const updatedUser = req.body;
+
+  // check if the user exists in the spreadsheet
+  usermodel.findOne({ email }).then((user) => {
+    if (!user) {
+      return res.status(404).json({ emailnotfound: "Email not found" });
+    }
+    // check if the password is correct
+    if (user.password !== hashPassword(password)) {
+      return res.status(400).json({ passwordincorrect: "Password incorrect" });
+    }
+
+    // update the user in the database
+    user
+      .save(updatedUser)
+      .then((user) => res.json(user))
+      .catch((err) => console.log(err));
+  });
+};
+
 const updateOnSheets = async (req, res) => {
   // perform data cleaning and validation for the posted data
   // know what field is updated and do the updates in iterative fashion
@@ -102,6 +148,28 @@ const updateOnSheets = async (req, res) => {
     resource: {
       values: [updatedUser],
     },
+  });
+};
+
+const deleteUser = async (req, res) => {
+  // perform data cleaning and validation for the posted data
+  const deletedUser = req.body;
+
+  // check if the user exists in the spreadsheet
+  usermodel.findOne({ email }).then((user) => {
+    if (!user) {
+      return res.status(404).json({ emailnotfound: "Email not found" });
+    }
+    // check if the password is correct
+    if (user.password !== hashPassword(password)) {
+      return res.status(400).json({ passwordincorrect: "Password incorrect" });
+    }
+
+    // delete the user in the database
+    user
+      .delete()
+      .then((user) => res.json(user))
+      .catch((err) => console.log(err));
   });
 };
 
