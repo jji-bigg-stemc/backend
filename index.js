@@ -2,7 +2,14 @@ const express = require("express");
 const PORT = require("./constants").PORT;
 const { google } = require("googleapis");
 
+const { default: mongoose } = require("mongoose");
+
 const getSpreadsheet = require("./funcs/googleapis").getSpreadsheet;
+
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 const app = express();
 // using cors: https://expressjs.com/en/resources/middleware/cors.html
@@ -23,9 +30,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const users = require("./routes/users");
-
 app.use(express.static(__dirname + "/public"));
+
+const users = require("./routes/users");
 app.use("/users", users);
 
 app.get("/", async (req, res) => {

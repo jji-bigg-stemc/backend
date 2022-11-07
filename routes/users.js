@@ -9,6 +9,7 @@ const { google } = require("googleapis");
 const { authSheets } = require("../funcs/googleapis");
 
 const usermodel = require("../models/usermodel");
+const { hashPassword } = require("../funcs/hashings");
 
 // update these below to match dev and prod environments
 // const SHEET_NAME = "Users";
@@ -39,11 +40,20 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   // check if the user exists in the spreadsheet
-  const user = await usermodel.findOne({ email, password });
+  usermodel.findOne({ email }).then((user) => {
+    if (!user) {
+      return res.status(404).json({ emailnotfound: "Email not found" });
+    }
+    // check if the password is correct
+    if (user.password !== hashPassword(password)) {
+      return res.status(400).json({ passwordincorrect: "Password incorrect" });
+    }
 
-  jwt.sign({ email, password }, process.env.SECRET_KEY, (err, token) => {
-    res.json({
-      token,
+    // create a token
+    jwt.sign({ email, password }, process.env.SECRET_KEY, (err, token) => {
+      res.json({
+        token,
+      });
     });
   });
 };
