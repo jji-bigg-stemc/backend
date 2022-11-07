@@ -1,9 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
+const jwt = require("jsonwebtoken");
+var crypto = require("crypto");
+
 const { google } = require("googleapis");
 
 const { authSheets } = require("../funcs/googleapis");
+
+const usermodel = require("../models/usermodel");
 
 // update these below to match dev and prod environments
 // const SHEET_NAME = "Users";
@@ -15,18 +20,44 @@ const SHEET_ID =
   process.env.SHEET_ID || "1IfBG0PgM3v4pf5UBcqwQo3EogqsieCdNG1BLEz9zEFg";
 
 // a pet function; please ignore this
-router.get("/", async (req, res) => {
+router.get("/", getFromSheets);
+
+router.post("/login", login);
+
+router.post("/register", registerOnSheets);
+
+router.put("/update", updateOnSheets);
+
+router.delete("/delete", deleteFromSheets);
+
+const login = async (req, res) => {
+  // most likely not using this route, as auth0 will be handling this
+  // but this could be later useful for authenticating in the local instance
+  // of the app
+
+  // perform data cleaning and validation for the posted data
+  const { email, password } = req.body;
+
+  // check if the user exists in the spreadsheet
+  const user = await usermodel.findOne({ email, password });
+
+  jwt.sign({ email, password }, process.env.SECRET_KEY, (err, token) => {
+    res.json({
+      token,
+    });
+  });
+};
+
+const getFromSheets = async (req, res) => {
   const { auth, authClient, sheets } = await authSheets(CRED_FILE);
   const getRows = await sheets.spreadsheets.values.get({
     SHEET_ID,
     range: "Sheet1!A1:E",
   });
   res.send(getRows.data);
-});
+};
 
-router.post("/login", async (req, res) => {});
-
-router.post("/register", async (req, res) => {
+const registerOnSheets = async (req, res) => {
   // maybe use this after registering from the frontend: Auth0
   // then just update infos here for record keeping
 
@@ -44,9 +75,9 @@ router.post("/register", async (req, res) => {
       values: [newUser],
     },
   });
-});
+};
 
-router.put("/update", async (req, res) => {
+const updateOnSheets = async (req, res) => {
   // perform data cleaning and validation for the posted data
   // know what field is updated and do the updates in iterative fashion
   const updatedUser = req.body;
@@ -62,6 +93,19 @@ router.put("/update", async (req, res) => {
       values: [updatedUser],
     },
   });
-});
+};
+
+const deleteFromSheets = async (req, res) => {
+  // perform data cleaning and validation for the posted data
+  const deletedUser = req.body;
+
+  // delete a row in the spreadsheet
+
+  const { auth, authClient, sheets } = await authSheets(CRED_FILE);
+  const newRow = await sheets.spreadsheets.values.delete({
+    SHEET_ID,
+    range: `${SHEET_NAME}!A2`,
+  });
+};
 
 module.exports = router;
