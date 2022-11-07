@@ -1,0 +1,1 @@
+// provide registration related emails
